@@ -31,87 +31,90 @@ class Main {
 
     constructor() {
         this.listen(3000);
+        this.order();
     }
 
-    run() {
+    order() {
 
-        
+        // data order request
+        let data: any = {
+            product_id : 3,
+            qty     : 2
+        };
 
+        // proccess
+        queue.process('order', async (job: any, done: any) => {
 
-        
-        
-    }
+            try {
 
-    async order(data: any) {
-
-        try {
-
-            let outOfStock : any = {
-                bool: false,
-                data: []
-            }
-
-
-            /** proccess order*/
-            let allProduct = await Product;
-
-            // cek product and deduct stock
-            await allProduct.map((el) => {
-                if(el.product_id == data.product_id && el.stock < data.qty) {
-                    outOfStock.bool = true;
-                    outOfStock.data.push(el);
-                }else{
-                    if(el.product_id == data.product_id) {
-                        el.stock = el.stock-data.qty;
-                    }
+                let outOfStock : any = {
+                    bool: false,
+                    data: []
                 }
-            });
 
-            // get product by id
-            let filter = Product.filter((el) => el.product_id == data.product_id);
+                /** proccess order*/
+                let allProduct = await Product;
 
-            // check product exist
-            if(filter.length < 1) {
-                return JSON.stringify({
-                    errorMsg: 'Product not found.',
-                    data: null
+                // if product exist? cek stock and deduct stock product
+                allProduct.map((el) => {
+                    if(el.product_id == data.product_id && el.stock < data.qty) {
+                        outOfStock.bool = true;
+                        outOfStock.data.push(el);
+                    }else{
+                        if(el.product_id == data.product_id) {
+                            el.stock = el.stock-data.qty;
+                        }
+                    }
                 });
+
+                // get product by id
+                let filter = Product.filter((el) => el.product_id == data.product_id);
+
+                // validation product is exist
+                if(filter.length < 1) {
+                    return done(JSON.stringify({
+                        errorMsg: 'Product not found.',
+                        data: null
+                    }));
+                }
+
+                // validation stock product
+                if(outOfStock.bool) {
+
+                    return done(JSON.stringify({
+                        errorMsg: 'Out of Stock',
+                        data: outOfStock.data
+                    }));
+
+                } 
+
+                return done(JSON.stringify({successMsg: 'success buy product', data: filter}));
+
+            } catch (error) {
+                
             }
-
-            // cek stock product
-            if(outOfStock.bool) {
-
-                return JSON.stringify({
-                    errorMsg: 'Out of Stock',
-                    data: outOfStock.data
-                });
-
-            } 
-
-            return JSON.stringify({successMsg: 'success buy product', data: filter});
-
-        } catch (error) {
-            
-        }
+        
+        });
         
     }
 
     listen(port: number) { 
-        let that = this;
 
          app.get('/order', async function(req:any, res:any){
-            
-            // data order
-            let data: any = {
-                    product_id : 3,
-                    qty     : 2
-                };
+           
+            const job = queue.create('order', {});
 
+            job.on('failed', err => {
+                console.log(err); 
+            });
 
-            let order = await that.order(data);
-            console.log('order: ', order);
-            
-            await res.send(order);
+            job.on('complete', result => {
+                console.log(result);
+                res.send(result);
+            });
+
+            job.save();
+
 
         });
 
@@ -123,4 +126,3 @@ class Main {
 }
 
 let main$ = new Main;
-main$.run();
