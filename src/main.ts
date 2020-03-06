@@ -55,6 +55,7 @@ class Main {
             /** proccess order*/
             let allProduct = await Product;
 
+            // cek product and deduct stock
             await allProduct.map((el) => {
                 if(el.product_id == data.product_id && el.stock < data.qty) {
                     outOfStock.bool = true;
@@ -64,9 +65,9 @@ class Main {
                         el.stock = el.stock-data.qty;
                     }
                 }
-                
             });
 
+            // get product by id
             let filter = Product.filter((el) => el.product_id == data.product_id);
 
             // check product exist
@@ -110,14 +111,7 @@ class Main {
             let order = await that.order(data);
             console.log('order: ', order);
             
-            
-            // order 1
             await res.send(order);
-
-            // order 2
-            // that.order(data);
-
-
 
         });
 
