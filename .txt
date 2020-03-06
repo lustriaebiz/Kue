@@ -1,0 +1,6 @@
+https://www.yudana.id/instalasi-redis-di-windows-dan-contoh-program-php/
+
+https://github.com/ServiceStack/redis-windows/raw/master/downloads/redis-latest.zip
+
+1. extract
+2. cmd run -> redis-server.exe redis.windows.conf
